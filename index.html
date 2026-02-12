@@ -348,22 +348,60 @@ function playStory(story){
   ytPlayer.playVideo();
 }
 
-function onPlayerStateChange(event){
+// function onPlayerStateChange(event){
+//   const btn=document.getElementById("playPause");
+//   const status=document.getElementById("playerStatus");
+
+//   if(event.data===YT.PlayerState.PLAYING){
+//     btn.textContent="❚❚";
+//     status.textContent="Playing Audio...";
+//     startProgress();
+//   }else if(event.data===YT.PlayerState.BUFFERING){
+//     status.textContent="Buffering...";
+//   }else{
+//     btn.textContent="▶";
+//     status.textContent="Paused";
+//     stopProgress();
+//   }
+// }
+
+  function onPlayerStateChange(event){
   const btn=document.getElementById("playPause");
   const status=document.getElementById("playerStatus");
 
-  if(event.data===YT.PlayerState.PLAYING){
-    btn.textContent="❚❚";
-    status.textContent="Playing Audio...";
-    startProgress();
-  }else if(event.data===YT.PlayerState.BUFFERING){
-    status.textContent="Buffering...";
-  }else{
-    btn.textContent="▶";
-    status.textContent="Paused";
-    stopProgress();
+  switch(event.data){
+
+    case YT.PlayerState.PLAYING:
+      // Ignore ad phase (duration usually 0 during ads)
+      if(ytPlayer.getDuration() > 0){
+        btn.textContent="❚❚";
+        status.textContent="Playing Audio...";
+        startProgress();
+      }
+      break;
+
+    case YT.PlayerState.BUFFERING:
+      status.textContent="Buffering...";
+      break;
+
+    case YT.PlayerState.PAUSED:
+      btn.textContent="▶";
+      status.textContent="Paused";
+      stopProgress();
+      break;
+
+    case YT.PlayerState.ENDED:
+      btn.textContent="▶";
+      status.textContent="Finished";
+      stopProgress();
+      break;
+
+    case YT.PlayerState.UNSTARTED:
+      status.textContent="Loading...";
+      break;
   }
 }
+
 
 function formatTime(seconds){
   const mins=Math.floor(seconds/60);
@@ -371,11 +409,29 @@ function formatTime(seconds){
   return `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
 }
 
-function startProgress(){
+// function startProgress(){
+//   progressInterval=setInterval(()=>{
+//     const current=ytPlayer.getCurrentTime();
+//     const duration=ytPlayer.getDuration();
+//     if(duration){
+//       const percent=(current/duration)*100;
+//       document.getElementById("progressBar").style.width=percent+"%";
+//       document.getElementById("audioTime").textContent=
+//         `${formatTime(current)} / ${formatTime(duration)}`;
+//     }
+//   },500);
+// }
+
+  function startProgress(){
+  stopProgress(); // prevent stacking intervals
+
   progressInterval=setInterval(()=>{
+    if(!ytPlayer || ytPlayer.getDuration()===0) return;
+
     const current=ytPlayer.getCurrentTime();
     const duration=ytPlayer.getDuration();
-    if(duration){
+
+    if(duration > 0){
       const percent=(current/duration)*100;
       document.getElementById("progressBar").style.width=percent+"%";
       document.getElementById("audioTime").textContent=
@@ -383,6 +439,7 @@ function startProgress(){
     }
   },500);
 }
+
 
 function stopProgress(){
   clearInterval(progressInterval);
